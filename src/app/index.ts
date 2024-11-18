@@ -2,6 +2,7 @@ import express from "express";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import bodyParser from "body-parser";
+import { User } from "./user";
 
 export async function initServer() {
   const app = express();
@@ -9,20 +10,15 @@ export async function initServer() {
   app.use(bodyParser.json());
 
   const graphqlServer = new ApolloServer({
-    typeDefs: `
+    typeDefs: `#graphql
+    ${User.types}
     type Query {
-        hello: String!
+        ${User.queries}
     }
-        type Mutation {
-            hello: String!
-        }
         `,
     resolvers: {
       Query: {
-        hello: () => "Hello world!",
-      },
-      Mutation: {
-        hello: () => "Hello world!",
+        ...User.resolvers.queries,
       },
     },
   });
