@@ -14,7 +14,7 @@ class JWTService {
     
           const token = JWT.sign(payload, JWT_SECRET)
     
-          return token
+          return token;
     }
 }
 export default JWTService;
