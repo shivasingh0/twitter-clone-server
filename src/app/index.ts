@@ -4,14 +4,28 @@ import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import bodyParser from "body-parser";
 import { User } from "./user";
+import { GraphqlContext } from "../interfaces";
+import JWTService from "../services/jwt";
 
 export async function initServer() {
   const app = express();
 
-  app.use(bodyParser.json());
-  app.use(cors());
+  // // Middleware to set COOP and COEP headers
+  // app.use((req, res, next) => {
+  //   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  //   res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  //   next();
+  // });
 
-  const graphqlServer = new ApolloServer({
+  app.use(bodyParser.json());
+
+  app.use(
+    cors({
+      origin: "*",
+    })
+  );
+
+  const graphqlServer = new ApolloServer<GraphqlContext>({
     typeDefs: `#graphql
     ${User.types}
     type Query {
@@ -27,7 +41,23 @@ export async function initServer() {
 
   await graphqlServer.start();
 
-  app.use("/graphql", expressMiddleware(graphqlServer));
+  app.use(
+    "/graphql",
+    expressMiddleware(graphqlServer, {
+      context: async ({ req, res }) => {
+        // console.log(req,res, "Line 48")
+        return {
+          user: req.headers.authorization
+            ? JWTService.decodeToken(req.headers.authorization)
+            : undefined,
+        };
+      },
+    })
+  );
+
+  app.get("/", (req, res) => {
+    res.send("Welcome to the GraphQL server!");
+  });
 
   return app;
 }
